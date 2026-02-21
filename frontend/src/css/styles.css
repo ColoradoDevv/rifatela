@@ -405,6 +405,20 @@ img {
 }
 
 /* --- RAFFLE GRID & CARDS --- */
+.rifas-main {
+    padding: 2rem 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.rifas-list-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 1.5rem;
+}
+
 #list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

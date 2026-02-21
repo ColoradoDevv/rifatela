@@ -1,8 +1,19 @@
 const mongoose = require('mongoose');
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const ParticipantSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true },
+  email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+    validate: {
+      validator: (v) => emailRegex.test(v),
+      message: 'El correo electrónico no es válido'
+    }
+  },
   phone: { type: String },
   ticketNumber: { type: Number, required: true, min: 0, max: 9999 },
   code: { type: String, unique: true },

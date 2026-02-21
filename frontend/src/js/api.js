@@ -1,6 +1,8 @@
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE)
-  ? import.meta.env.VITE_API_BASE
-  : '/api';
+import { API_BASE } from './config.js';
+
+function isNetworkError(err) {
+  return err?.name === 'TypeError' && (err.message === 'Failed to fetch' || err.message?.includes('fetch'));
+}
 
 async function parseJsonOrThrow(res, fallbackMessage) {
   if (!res.ok) {
@@ -10,18 +12,36 @@ async function parseJsonOrThrow(res, fallbackMessage) {
   return res.json();
 }
 
-export async function listRaffles() {
-  const res = await fetch(`${API_BASE}/raffles`);
-  return parseJsonOrThrow(res, 'Error fetching raffles');
+async function apiFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, { ...options, credentials: options.credentials ?? 'same-origin' });
+    return res;
+  } catch (err) {
+    if (isNetworkError(err)) {
+      window.dispatchEvent(new CustomEvent('apiError', { detail: { type: 'network', message: 'No hay conexión con el servidor.' } }));
+    }
+    throw err;
+  }
+}
+
+export async function listRaffles(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.page != null) params.set('page', String(opts.page));
+  if (opts.limit != null) params.set('limit', String(opts.limit));
+  const qs = params.toString();
+  const url = `${API_BASE}/raffles${qs ? `?${qs}` : ''}`;
+  const res = await apiFetch(url);
+  const data = await parseJsonOrThrow(res, 'Error fetching raffles');
+  return data;
 }
 
 export async function getRaffle(id) {
-  const res = await fetch(`${API_BASE}/raffles/${id}`);
+  const res = await apiFetch(`${API_BASE}/raffles/${id}`);
   return parseJsonOrThrow(res, 'Error fetching raffle');
 }
 
 export async function createRaffle(data) {
-  const res = await fetch(`${API_BASE}/raffles`, {
+  const res = await apiFetch(`${API_BASE}/raffles`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -30,7 +50,7 @@ export async function createRaffle(data) {
 }
 
 export async function buyTicket(raffleId, ticketData) {
-  const res = await fetch(`${API_BASE}/raffles/${raffleId}/buy`, {
+  const res = await apiFetch(`${API_BASE}/raffles/${raffleId}/buy`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(ticketData)
@@ -39,7 +59,7 @@ export async function buyTicket(raffleId, ticketData) {
 }
 
 export async function registerSale(raffleId, saleData) {
-  const res = await fetch(`${API_BASE}/raffles/${raffleId}/register-sale`, {
+  const res = await apiFetch(`${API_BASE}/raffles/${raffleId}/register-sale`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(saleData),
@@ -49,18 +69,37 @@ export async function registerSale(raffleId, saleData) {
 }
 
 export async function trackTicket(code) {
-  const res = await fetch(`${API_BASE}/raffles/boleta/${encodeURIComponent(code)}`);
+  const res = await apiFetch(`${API_BASE}/raffles/boleta/${encodeURIComponent(code)}`);
   if (res.status === 404) return { found: false };
-  return parseJsonOrThrow(res, 'Error consultando boleta');
+  const data = await parseJsonOrThrow(res, 'Error consultando boleta');
+  const ticketsSold = data.participant ? (data.participants?.length ?? data.ticketsSold ?? 0) : 0;
+  const totalTickets = data.totalTickets ?? 10000;
+  const ticket = data.participant
+    ? {
+        ...data.participant,
+        email: data.participant.email,
+        phone: data.participant.phone,
+        formattedDate: data.participant.boughtAt ? new Date(data.participant.boughtAt).toLocaleDateString('es-CO') : null
+      }
+    : null;
+  const raffle = {
+    ...data,
+    ticketsSold: data.ticketsSold ?? ticketsSold,
+    totalTickets,
+    ticketsRemaining: totalTickets - (data.ticketsSold ?? ticketsSold),
+    soldPercentage: totalTickets ? Math.round(((data.ticketsSold ?? ticketsSold) / totalTickets) * 100) : 0,
+    isWinner: !!(data.winner && data.participant && data.winner.code === data.participant.code)
+  };
+  return { found: !!data.participant, raffle, ticket };
 }
 
 export async function drawWinner(raffleId) {
-  const res = await fetch(`${API_BASE}/raffles/${raffleId}/draw`, { method: 'POST' });
+  const res = await apiFetch(`${API_BASE}/raffles/${raffleId}/draw`, { method: 'POST', credentials: 'include' });
   return parseJsonOrThrow(res, 'Error drawing winner');
 }
 
 export async function login(credentials) {
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  const res = await apiFetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
@@ -70,7 +109,7 @@ export async function login(credentials) {
 }
 
 export async function logout() {
-  const res = await fetch(`${API_BASE}/auth/logout`, {
+  const res = await apiFetch(`${API_BASE}/auth/logout`, {
     method: 'POST',
     credentials: 'include'
   });
@@ -78,23 +117,23 @@ export async function logout() {
 }
 
 export async function getAuthMe() {
-  const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+  const res = await apiFetch(`${API_BASE}/auth/me`, { credentials: 'include' });
   if (res.status === 401) return null;
   return parseJsonOrThrow(res, 'Error al verificar sesion');
 }
 
 export async function getAdminStats() {
-  const res = await fetch(`${API_BASE}/raffles/admin/stats`, { credentials: 'include' });
+  const res = await apiFetch(`${API_BASE}/raffles/admin/stats`, { credentials: 'include' });
   return parseJsonOrThrow(res, 'Error cargando estadisticas');
 }
 
 export async function listSellers() {
-  const res = await fetch(`${API_BASE}/auth/users/sellers`, { credentials: 'include' });
+  const res = await apiFetch(`${API_BASE}/auth/users/sellers`, { credentials: 'include' });
   return parseJsonOrThrow(res, 'Error cargando vendedores');
 }
 
 export async function createSeller(data) {
-  const res = await fetch(`${API_BASE}/auth/users/sellers`, {
+  const res = await apiFetch(`${API_BASE}/auth/users/sellers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -104,7 +143,7 @@ export async function createSeller(data) {
 }
 
 export async function saveTicketToDB(code, userId, email, phone) {
-  const res = await fetch(`${API_BASE}/raffles/boletas/save`, {
+  const res = await apiFetch(`${API_BASE}/raffles/boletas/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code, userId, email, phone })
@@ -113,12 +152,12 @@ export async function saveTicketToDB(code, userId, email, phone) {
 }
 
 export async function getMyTicketsFromDB(userId) {
-  const res = await fetch(`${API_BASE}/raffles/boletas/my/${encodeURIComponent(userId)}`);
+  const res = await apiFetch(`${API_BASE}/raffles/boletas/my/${encodeURIComponent(userId)}`);
   return parseJsonOrThrow(res, 'Error al obtener las boletas');
 }
 
 export async function removeSavedTicketFromDB(code, userId) {
-  const res = await fetch(`${API_BASE}/raffles/boletas/${encodeURIComponent(code)}/${encodeURIComponent(userId)}`, {
+  const res = await apiFetch(`${API_BASE}/raffles/boletas/${encodeURIComponent(code)}/${encodeURIComponent(userId)}`, {
     method: 'DELETE'
   });
   return parseJsonOrThrow(res, 'Error al eliminar la boleta');

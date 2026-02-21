@@ -18,11 +18,11 @@ router.delete('/boletas/:code/:userId', controller.removeSavedTicket);
 // CRUD
 router.get('/', controller.list);
 router.get('/:id', controller.getById);
-router.post('/', controller.create);
+router.post('/', requireAuth, requireRole('admin'), controller.create);
 
 // Actions
 router.post('/:id/buy', controller.buyTicket);
 router.post('/:id/register-sale', requireAuth, requireRole('admin', 'seller'), controller.registerSale);
-router.post('/:id/draw', controller.drawWinner);
+router.post('/:id/draw', requireAuth, requireRole('admin'), controller.drawWinner);
 
 module.exports = router;

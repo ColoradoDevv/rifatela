@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'rifatela-admin-secret-change-in-production';
+const { JWT_SECRET } = require('../config/env');
 
 function requireAuth(req, res, next) {
   const token = req.cookies?.auth_token || (req.headers.authorization && req.headers.authorization.replace('Bearer ', ''));

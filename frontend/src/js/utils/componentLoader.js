@@ -1,23 +1,24 @@
-// Helper function to resolve paths relative to src root
+import { devLog, devError } from './logger.js';
+import { getFrontendBasePath } from '../config.js';
+
+/**
+ * Resuelve rutas relativas al directorio src del frontend.
+ * Usa base absoluta desde la raíz del sitio (/src/ o /subpath/src/) para no depender
+ * de la profundidad del pathname de la página actual.
+ */
 function resolvePath(relativePath) {
-    // Get the current HTML file path
-    const currentPath = window.location.pathname;
-    // Find the index of 'src' in the path
-    const srcIndex = currentPath.indexOf('/src/');
-    if (srcIndex === -1) {
-        // If 'src' not found, try to count from current location
-        const pathParts = currentPath.split('/').filter(p => p && !p.endsWith('.html'));
-        const depth = pathParts.length;
-        return depth > 0 ? '../'.repeat(depth) + relativePath : relativePath;
+    const base = getFrontendBasePath();
+    const pathname = window.location.pathname;
+    const hasSrc = pathname.indexOf('/src/') !== -1;
+
+    if (hasSrc) {
+        const clean = relativePath.replace(/^\.\//, '').replace(/^\.\.\//, '');
+        return base + clean;
     }
-    // Get everything after /src/
-    const afterSrc = currentPath.substring(srcIndex + 5); // +5 for '/src/'
-    // Count directories in the path after src
-    const directories = afterSrc.split('/').filter(p => p && !p.endsWith('.html'));
-    const depth = directories.length;
-    // Build path prefix (../ for each level deep)
+    const pathParts = pathname.split('/').filter(p => p && !p.endsWith('.html'));
+    const depth = pathParts.length;
     const prefix = depth > 0 ? '../'.repeat(depth) : '';
-    return prefix + relativePath;
+    return prefix + relativePath.replace(/^\.\//, '');
 }
 
 export function loadComponents() {
@@ -36,7 +37,7 @@ export function loadComponents() {
                 data.components.forEach(comp => loadComponent(comp));
             }
         })
-        .catch(error => console.error("Error initializing component loader:", error));
+        .catch(error => devError("Error initializing component loader:", error));
 }
 
 function loadComponent(comp) {
@@ -77,9 +78,9 @@ function loadComponent(comp) {
                 detail: { selector: comp.selector, container: container }
             }));
 
-            console.log(`Component loaded into ${comp.selector}`);
+            devLog(`Component loaded into ${comp.selector}`);
         })
-        .catch(error => console.error(`Error loading component ${comp.selector}:`, error));
+        .catch(error => devError(`Error loading component ${comp.selector}:`, error));
 }
 
 function highlightActiveNav(container) {
@@ -130,5 +131,5 @@ function loadStyle(href) {
     link.rel = "stylesheet";
     link.href = href;
     document.head.appendChild(link);
-    console.log(`Style loaded: ${href}`);
+    devLog(`Style loaded: ${href}`);
 }

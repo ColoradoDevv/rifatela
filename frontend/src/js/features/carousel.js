@@ -1,3 +1,5 @@
+import { devWarn } from '../utils/logger.js';
+
 /**
  * Initializes the Hero Carousel functionality.
  * @param {HTMLElement} container - The container element for the Hero component.
@@ -12,7 +14,7 @@ export function initHeroCarousel(container) {
     let isInteractionLocked = false;
 
     if (!track || dots.length === 0) {
-        console.warn("Carousel elements not found in container.");
+        devWarn("Carousel elements not found in container.");
         return;
     }
 

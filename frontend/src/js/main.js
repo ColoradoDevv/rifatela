@@ -16,11 +16,24 @@ if (document.readyState === 'loading') {
 }
 
 function initApp() {
-  // Load all structural components (Header, Hero (main), etc.)
+  setupGlobalApiErrorHandler();
   loadComponents();
-
-  // If we have a raffle list element on this page, load the data
   if (listEl) loadRaffles();
+}
+
+function setupGlobalApiErrorHandler() {
+  window.addEventListener('apiError', (e) => {
+    const message = e.detail?.message || 'Error de conexión con el servidor.';
+    const existing = document.getElementById('global-api-error-banner');
+    if (existing) return;
+    const banner = document.createElement('div');
+    banner.id = 'global-api-error-banner';
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;padding:12px 16px;text-align:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.2);';
+    banner.innerHTML = `${message} <button type="button" style="margin-left:12px;background:rgba(255,255,255,0.2);border:none;color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer;">Reintentar</button>`;
+    banner.querySelector('button').addEventListener('click', () => { banner.remove(); window.location.reload(); });
+    document.body.prepend(banner);
+  });
 }
 
 // Logic to run after a component (like Header or Hero) is injected into the page
@@ -30,7 +43,6 @@ document.addEventListener("componentLoaded", (e) => {
   }
 
   if (e.detail.selector === ".hero-container") {
-    console.log("Hero component injected, initializing features...");
     initHeroTracking(e.detail.container);
     initHeroCarousel(e.detail.container);
   }
@@ -40,10 +52,10 @@ document.addEventListener("componentLoaded", (e) => {
 
 async function loadRaffles() {
   try {
-    const raffles = await listRaffles();
-    renderList(raffles);
+    const data = await listRaffles({ page: 1, limit: 50 });
+    const list = Array.isArray(data) ? data : (data.items || []);
+    renderList(list);
   } catch (e) {
-    console.error("API error:", e);
     if (listEl) listEl.innerHTML = `<li class="error">Error de API: Verifica la conexión al servidor.</li>`;
   }
 }
@@ -116,6 +128,7 @@ if (listEl) {
     } else if (drawBtn) {
       const id = drawBtn.dataset.id;
       if (!confirm('¿Seguro que quieres realizar el sorteo ahora?')) return;
+      if (!confirm('Esta acción es irreversible. ¿Confirmar sorteo?')) return;
       try {
         const res = await drawWinner(id);
         alert('¡Tenemos un ganador! Felicitaciones a: ' + (res.winner?.name || "Ganador no encontrado"));

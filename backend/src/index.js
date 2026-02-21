@@ -1,20 +1,43 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const dotenv = require('dotenv');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
+const { CORS_ORIGIN } = require('./config/env');
 const rafflesRoutes = require('./routes/raffles');
 const authRoutes = require('./routes/auth');
 const { requireAuthRedirectRole } = require('./middleware/auth');
 
-dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors({ origin: true, credentials: true }));
+
+app.use(cors({
+  origin: CORS_ORIGIN === true || CORS_ORIGIN === 'true' ? true : CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) || true,
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
+
+const limiterGeneral = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 120,
+  message: { message: 'Demasiadas solicitudes, intenta mas tarde' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const limiterAuth = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { message: 'Demasiados intentos de inicio de sesion' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use('/api/', limiterGeneral);
+app.use('/api/auth/login', limiterAuth);
 
 // API Routes (must be before static files)
 app.use('/api/raffles', rafflesRoutes);

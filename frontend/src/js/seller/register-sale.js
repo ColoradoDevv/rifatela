@@ -189,8 +189,9 @@ async function loadRaffles() {
   const raffleSelect = document.getElementById('raffle-select');
 
   try {
-    const raffles = await listRaffles();
-    const activeRaffles = raffles.filter((r) => r.status === 'active');
+    const data = await listRaffles({ limit: 100 });
+    const list = Array.isArray(data) ? data : (data.items || []);
+    const activeRaffles = list.filter((r) => r.status === 'active');
 
     raffleSelect.innerHTML = '<option value="">Selecciona una rifa...</option>';
 

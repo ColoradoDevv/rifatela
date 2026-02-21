@@ -1,10 +1,10 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET, NODE_ENV } = require('../config/env');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'rifatela-admin-secret-change-in-production';
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: NODE_ENV === 'production',
   sameSite: 'lax',
   maxAge: 24 * 60 * 60 * 1000
 };

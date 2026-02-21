@@ -155,14 +155,14 @@ async function showMyTicketsModal() {
                     closeModal();
                     showMyTicketsModal();
                 } catch (error) {
-                    console.error('Error removing boleta:', error);
+                    try { (await import('../utils/logger.js')).devError('Error removing boleta:', error); } catch (_) {}
                     alert('Error al eliminar la boleta. Por favor, intenta nuevamente.');
                 }
             });
         });
         
     } catch (error) {
-        console.error('Error loading boletas:', error);
+        try { (await import('../utils/logger.js')).devError('Error loading boletas:', error); } catch (_) {}
         modalBody.innerHTML = `
             <div class="my-tickets-modal__empty">
                 <p style="color: #fca5a5;">Error al cargar las boletas.</p>
@@ -199,7 +199,7 @@ export async function saveTicket(ticketData) {
             ticketData.phone || null
         );
     } catch (error) {
-        console.error('Error saving boleta to database:', error);
+        try { (await import('../utils/logger.js')).devError('Error saving boleta to database:', error); } catch (_) {}
         // Silently fail - don't interrupt user experience
     }
 }
