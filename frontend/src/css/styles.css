@@ -406,9 +406,11 @@ img {
 
 /* --- RAFFLE GRID & CARDS --- */
 .rifas-main {
-    padding: 2rem 1.5rem;
+    padding: clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 1.5rem);
     max-width: 1200px;
     margin: 0 auto;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 .rifas-list-title {
@@ -421,9 +423,9 @@ img {
 
 #list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    padding: 2rem 0;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: clamp(1rem, 4vw, 2rem);
+    padding: clamp(1rem, 4vw, 2rem) 0;
     list-style: none;
 }
 
@@ -474,12 +476,15 @@ img {
 
 .raffle-actions button {
     flex: 1;
-    padding: 0.75rem;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
     border-radius: 12px;
     font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .buy-btn {
@@ -555,13 +560,16 @@ main {
 
 @media (max-width: 767px) {
     .bubble-float-container {
-        right: 0.9rem;
-        bottom: 0.9rem;
+        right: max(0.9rem, env(safe-area-inset-right));
+        bottom: max(0.9rem, env(safe-area-inset-bottom));
     }
 
     .whatsapp-float {
         width: 54px;
         height: 54px;
+        min-width: 48px;
+        min-height: 48px;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .whatsapp-float__icon {
@@ -834,21 +842,101 @@ body::after {
     box-shadow: 0 4px 12px rgba(196, 12, 12, 0.4);
 }
 
+/* Global API error banner (mobile-friendly) */
+#global-api-error-banner {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+#global-api-error-banner button {
+    min-height: 36px;
+    padding: 0.5rem 1rem;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
 @media (max-width: 767px) {
+    .rifas-main {
+        padding-top: 1rem;
+    }
+
+    .rifas-list-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .raffle-item {
+        padding: 1.25rem;
+        border-radius: 20px;
+    }
+
+    .raffle-item h3 {
+        font-size: 1.25rem;
+    }
+
+    .raffle-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .raffle-actions button {
+        min-height: 48px;
+        width: 100%;
+    }
+
     .my-tickets-modal__content {
         width: 95%;
-        max-height: 90vh;
+        max-height: 85vh;
+        max-height: 85dvh;
+        margin: env(safe-area-inset-top) auto env(safe-area-inset-bottom);
     }
 
     .my-tickets-modal__header {
         padding: 1.25rem 1.5rem;
+        padding-left: max(1.25rem, env(safe-area-inset-left));
     }
 
     .my-tickets-modal__body {
         padding: 1.25rem 1.5rem;
+        -webkit-overflow-scrolling: touch;
     }
 
     .my-tickets-modal__title {
         font-size: 1.5rem;
+    }
+
+    .my-tickets-modal__close {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.75rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .my-tickets-modal__ticket-remove {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.25rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .my-tickets-modal__ticket-track {
+        min-height: 48px;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+}
+
+@media (max-width: 480px) {
+    #list {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .raffle-item {
+        padding: 1rem;
     }
 }

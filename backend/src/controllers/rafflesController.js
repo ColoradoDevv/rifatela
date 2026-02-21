@@ -313,13 +313,23 @@ exports.drawWinner = async (req, res) => {
   }
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getUserSecretFromRequest(req) {
+  return req.headers['x-user-secret'] || req.body?.userSecret || null;
+}
+
 // POST /api/raffles/tickets/save
 exports.saveTicket = async (req, res) => {
   try {
-    const { code, userId, email, phone } = req.body;
+    const { code, userSecret, email, phone } = req.body;
+    const secret = userSecret || getUserSecretFromRequest(req);
 
-    if (!code || !userId) {
-      return res.status(400).json({ message: 'Codigo y userId son obligatorios' });
+    if (!code || !secret) {
+      return res.status(400).json({ message: 'Codigo y userSecret son obligatorios' });
+    }
+    if (!UUID_REGEX.test(secret)) {
+      return res.status(400).json({ message: 'userSecret debe ser un UUID válido' });
     }
 
     const raffle = await Raffle.findOne(
@@ -333,7 +343,7 @@ exports.saveTicket = async (req, res) => {
 
     const participant = raffle.participants[0];
 
-    const existing = await SavedTicket.findOne({ code: code.toUpperCase(), userId });
+    const existing = await SavedTicket.findOne({ code: code.toUpperCase(), userSecret: secret });
     if (existing) {
       return res.json({
         success: true,
@@ -351,7 +361,7 @@ exports.saveTicket = async (req, res) => {
       email: email || participant.email,
       phone: phone || participant.phone,
       boughtAt: participant.boughtAt,
-      userId
+      userSecret: secret
     });
 
     await savedTicket.save();
@@ -369,16 +379,19 @@ exports.saveTicket = async (req, res) => {
   }
 };
 
-// GET /api/raffles/tickets/my/:userId
+// GET /api/raffles/tickets/my — header X-User-Secret obligatorio
 exports.getMyTickets = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userSecret = getUserSecretFromRequest(req);
 
-    if (!userId) {
-      return res.status(400).json({ message: 'userId es obligatorio' });
+    if (!userSecret) {
+      return res.status(400).json({ message: 'Header X-User-Secret o body.userSecret es obligatorio' });
+    }
+    if (!UUID_REGEX.test(userSecret)) {
+      return res.status(400).json({ message: 'userSecret debe ser un UUID válido' });
     }
 
-    const savedTickets = await SavedTicket.find({ userId }).sort({ savedAt: -1 }).lean();
+    const savedTickets = await SavedTicket.find({ userSecret }).sort({ savedAt: -1 }).lean();
 
     res.json({ success: true, tickets: savedTickets, count: savedTickets.length });
   } catch (err) {
@@ -386,16 +399,23 @@ exports.getMyTickets = async (req, res) => {
   }
 };
 
-// DELETE /api/raffles/tickets/:code/:userId
+// DELETE /api/raffles/tickets/:code — header X-User-Secret obligatorio
 exports.removeSavedTicket = async (req, res) => {
   try {
-    const { code, userId } = req.params;
+    const { code } = req.params;
+    const userSecret = getUserSecretFromRequest(req);
 
-    if (!code || !userId) {
-      return res.status(400).json({ message: 'Codigo y userId son obligatorios' });
+    if (!code) {
+      return res.status(400).json({ message: 'Codigo es obligatorio' });
+    }
+    if (!userSecret) {
+      return res.status(400).json({ message: 'Header X-User-Secret o body.userSecret es obligatorio' });
+    }
+    if (!UUID_REGEX.test(userSecret)) {
+      return res.status(400).json({ message: 'userSecret debe ser un UUID válido' });
     }
 
-    const deleted = await SavedTicket.findOneAndDelete({ code: code.toUpperCase(), userId });
+    const deleted = await SavedTicket.findOneAndDelete({ code: code.toUpperCase(), userSecret });
 
     if (!deleted) {
       return res.status(404).json({ message: 'Boleta no encontrada' });

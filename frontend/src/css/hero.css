@@ -213,6 +213,7 @@
 }
 
 .hero__track-btn {
+    min-height: 48px;
     padding: 1.15rem;
     background: linear-gradient(135deg, #c40c0c, #ff3333);
     color: white;
@@ -223,6 +224,8 @@
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(196, 12, 12, 0.4);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .hero__track-btn:hover {
@@ -257,6 +260,13 @@
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 0;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .hero__nav-dot--active {

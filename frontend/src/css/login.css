@@ -2,10 +2,14 @@
 
 .login-main {
     min-height: calc(100vh - 60px);
+    min-height: calc(100dvh - 60px);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
     position: relative;
     z-index: 10;
 }
@@ -119,9 +123,10 @@
 
 .login-form__input {
     width: 100%;
+    min-height: 44px;
     padding: 0.875rem 1rem;
     border: none;
-    font-size: 1rem;
+    font-size: 16px; /* Avoid zoom on iOS */
     font-weight: 500;
     background: transparent;
     outline: none;
@@ -209,6 +214,7 @@
 
 .login-form__submit {
     position: relative;
+    min-height: 48px;
     padding: 1.15rem;
     background: linear-gradient(135deg, #c40c0c, #ff3333);
     color: white;
@@ -221,6 +227,8 @@
     box-shadow: 0 4px 15px rgba(196, 12, 12, 0.4);
     font-family: 'Plus Jakarta Sans', sans-serif;
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .login-form__submit:hover:not(:disabled) {

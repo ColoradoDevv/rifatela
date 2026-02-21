@@ -1,0 +1,26 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/src/views/index.html" },
+    { "source": "/inicio", "destination": "/src/views/index.html" },
+    { "source": "/rifas", "destination": "/src/views/rifas.html" },
+    { "source": "/login", "destination": "/src/views/auth/login.html" },
+
+    { "source": "/admin", "destination": "/src/views/admin/dashboard.html" },
+    { "source": "/dashboard", "destination": "/src/views/admin/dashboard.html" },
+    { "source": "/admin/vendedores", "destination": "/src/views/admin/new-sellers.html" },
+    { "source": "/admin/new-sellers", "destination": "/src/views/admin/new-sellers.html" },
+
+    { "source": "/ventas", "destination": "/src/views/seller/register-sale.html" },
+    { "source": "/admin/register-sale", "destination": "/src/views/seller/register-sale.html" },
+
+    { "source": "/ganadores", "destination": "/src/views/index.html" },
+    { "source": "/soporte", "destination": "/src/views/index.html" },
+
+    { "source": "/css/:path*", "destination": "/src/css/:path*" },
+    { "source": "/js/:path*", "destination": "/src/js/:path*" },
+    { "source": "/assets/:path*", "destination": "/src/assets/:path*" },
+    { "source": "/config/:path*", "destination": "/src/config/:path*" },
+    { "source": "/components/:path*", "destination": "/src/components/:path*" },
+    { "source": "/views/:path*", "destination": "/src/views/:path*" }
+  ]
+}

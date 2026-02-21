@@ -1,33 +1,46 @@
 /**
- * Validación de variables de entorno requeridas.
- * El servidor debe fallar al iniciar si faltan variables críticas.
+ * Environment variable validation and app config.
  */
 require('dotenv').config();
 
-const required = [
-  'JWT_SECRET'
-];
+const required = ['JWT_SECRET'];
 
 const missing = required.filter((key) => !process.env[key] || process.env[key].trim() === '');
 
 if (missing.length > 0) {
-  console.error('ERROR: Faltan variables de entorno requeridas:');
+  console.error('ERROR: Missing required environment variables:');
   missing.forEach((key) => console.error(`  - ${key}`));
-  console.error('\nCrea un archivo .env con estas variables. En producción JWT_SECRET debe ser un valor aleatorio y seguro.');
+  console.error('\nCreate a .env file with the required variables. In production JWT_SECRET must be random and secure.');
   process.exit(1);
 }
 
-/** JWT secret para firmar tokens. Nunca usar valor por defecto en producción. */
 const JWT_SECRET = process.env.JWT_SECRET;
 
-/** Origen permitido para CORS. En producción definir CORS_ORIGIN (ej: https://tudominio.com) */
+/**
+ * CORS origins. Accepts:
+ * - true / "true" to allow any origin
+ * - comma-separated list of origins
+ */
 const CORS_ORIGIN = process.env.CORS_ORIGIN || true;
 
-/** Entorno: development | production */
+/** Environment: development | production */
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+/**
+ * Auth cookie settings:
+ * - COOKIE_SECURE: true/false (default true in production)
+ * - COOKIE_SAMESITE: lax | strict | none
+ * - COOKIE_DOMAIN: optional cookie domain
+ */
+const COOKIE_SECURE = process.env.COOKIE_SECURE;
+const COOKIE_SAMESITE = process.env.COOKIE_SAMESITE;
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || '';
 
 module.exports = {
   JWT_SECRET,
   CORS_ORIGIN,
-  NODE_ENV
+  NODE_ENV,
+  COOKIE_SECURE,
+  COOKIE_SAMESITE,
+  COOKIE_DOMAIN
 };

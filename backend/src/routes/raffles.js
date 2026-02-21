@@ -7,13 +7,13 @@ router.get('/ticket/:code', controller.trackTicket);
 router.get('/boleta/:code', controller.trackTicket);
 router.get('/admin/stats', requireAuth, requireRole('admin'), controller.adminStats);
 
-// Saved boletas endpoints (must be before /:id to avoid conflict)
+// Saved boletas (userSecret en header X-User-Secret o body; sin userId en URL)
 router.post('/tickets/save', controller.saveTicket);
-router.get('/tickets/my/:userId', controller.getMyTickets);
-router.delete('/tickets/:code/:userId', controller.removeSavedTicket);
+router.get('/tickets/my', controller.getMyTickets);
+router.delete('/tickets/:code', controller.removeSavedTicket);
 router.post('/boletas/save', controller.saveTicket);
-router.get('/boletas/my/:userId', controller.getMyTickets);
-router.delete('/boletas/:code/:userId', controller.removeSavedTicket);
+router.get('/boletas/my', controller.getMyTickets);
+router.delete('/boletas/:code', controller.removeSavedTicket);
 
 // CRUD
 router.get('/', controller.list);

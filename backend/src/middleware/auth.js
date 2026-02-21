@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/env');
+const { buildAuthCookieOptions } = require('../config/cookies');
 
 function requireAuth(req, res, next) {
   const token = req.cookies?.auth_token || (req.headers.authorization && req.headers.authorization.replace('Bearer ', ''));
@@ -31,7 +32,7 @@ function requireAuthRedirect(req, res, next) {
     req.user = { userId: decoded.userId, username: decoded.username, role: decoded.role };
     next();
   } catch (_err) {
-    res.clearCookie('auth_token', { httpOnly: true, sameSite: 'lax' });
+    res.clearCookie('auth_token', buildAuthCookieOptions());
     return res.redirect(302, loginRedirect);
   }
 }

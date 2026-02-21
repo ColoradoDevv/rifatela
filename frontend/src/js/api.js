@@ -142,23 +142,26 @@ export async function createSeller(data) {
   return parseJsonOrThrow(res, 'Error creando vendedor');
 }
 
-export async function saveTicketToDB(code, userId, email, phone) {
+export async function saveTicketToDB(code, userSecret, email, phone) {
   const res = await apiFetch(`${API_BASE}/raffles/boletas/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, userId, email, phone })
+    body: JSON.stringify({ code, userSecret, email, phone })
   });
   return parseJsonOrThrow(res, 'Error al guardar la boleta');
 }
 
-export async function getMyTicketsFromDB(userId) {
-  const res = await apiFetch(`${API_BASE}/raffles/boletas/my/${encodeURIComponent(userId)}`);
+export async function getMyTicketsFromDB(userSecret) {
+  const res = await apiFetch(`${API_BASE}/raffles/boletas/my`, {
+    headers: { 'X-User-Secret': userSecret }
+  });
   return parseJsonOrThrow(res, 'Error al obtener las boletas');
 }
 
-export async function removeSavedTicketFromDB(code, userId) {
-  const res = await apiFetch(`${API_BASE}/raffles/boletas/${encodeURIComponent(code)}/${encodeURIComponent(userId)}`, {
-    method: 'DELETE'
+export async function removeSavedTicketFromDB(code, userSecret) {
+  const res = await apiFetch(`${API_BASE}/raffles/boletas/${encodeURIComponent(code)}`, {
+    method: 'DELETE',
+    headers: { 'X-User-Secret': userSecret }
   });
   return parseJsonOrThrow(res, 'Error al eliminar la boleta');
 }

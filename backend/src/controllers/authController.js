@@ -1,13 +1,7 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET, NODE_ENV } = require('../config/env');
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: NODE_ENV === 'production',
-  sameSite: 'lax',
-  maxAge: 24 * 60 * 60 * 1000
-};
+const { JWT_SECRET } = require('../config/env');
+const { buildAuthCookieOptions } = require('../config/cookies');
 
 // POST /api/auth/login
 exports.login = async (req, res) => {
@@ -34,7 +28,7 @@ exports.login = async (req, res) => {
     const maxAge = remember ? 7 * 24 * 60 * 60 : 24 * 60 * 60;
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: maxAge });
 
-    res.cookie('auth_token', token, { ...COOKIE_OPTIONS, maxAge: maxAge * 1000 });
+    res.cookie('auth_token', token, buildAuthCookieOptions(maxAge * 1000));
     res.json({
       success: true,
       message: 'Sesion iniciada',
@@ -47,7 +41,7 @@ exports.login = async (req, res) => {
 
 // POST /api/auth/logout
 exports.logout = (req, res) => {
-  res.clearCookie('auth_token', { httpOnly: true, sameSite: 'lax' });
+  res.clearCookie('auth_token', buildAuthCookieOptions());
   res.json({ success: true, message: 'Sesion cerrada' });
 };
 

@@ -1,14 +1,26 @@
 import { getMyTicketsFromDB, removeSavedTicketFromDB } from '../api.js';
 
-// Get or create userId (using localStorage to persist user identity)
-function getUserId() {
-    let userId = localStorage.getItem('rifatela_userId');
-    if (!userId) {
-        // Generate a unique ID for this user/browser
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('rifatela_userId', userId);
+const STORAGE_KEY = 'rifatela_userSecret';
+
+function generateUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
     }
-    return userId;
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
+/** Obtiene o crea el userSecret (UUID) para "Mis boletas". Solo el cliente que tiene este valor puede ver/borrar sus boletas. */
+function getUserSecret() {
+    let secret = localStorage.getItem(STORAGE_KEY);
+    if (!secret) {
+        secret = generateUUID();
+        localStorage.setItem(STORAGE_KEY, secret);
+    }
+    return secret;
 }
 
 /**
@@ -63,7 +75,7 @@ export function initHeader(container) {
 
 // Show My Boletas Modal
 async function showMyTicketsModal() {
-    const userId = getUserId();
+    const userSecret = getUserSecret();
     
     // Create modal with loading state
     const modal = document.createElement('div');
@@ -100,7 +112,7 @@ async function showMyTicketsModal() {
     
     // Load boletas from MongoDB
     try {
-        const response = await getMyTicketsFromDB(userId);
+        const response = await getMyTicketsFromDB(userSecret);
         const savedTickets = response.tickets || [];
         
         modalBody.innerHTML = savedTickets.length === 0 
@@ -150,7 +162,7 @@ async function showMyTicketsModal() {
                 e.stopPropagation();
                 const code = btn.dataset.code;
                 try {
-                    await removeSavedTicketFromDB(code, userId);
+                    await removeSavedTicketFromDB(code, userSecret);
                     // Refresh modal
                     closeModal();
                     showMyTicketsModal();
@@ -188,13 +200,13 @@ async function showMyTicketsModal() {
 
 // Save boleta to MongoDB (exported for use in main.js)
 export async function saveTicket(ticketData) {
-    const userId = getUserId();
+    const userSecret = getUserSecret();
     const { saveTicketToDB } = await import('../api.js');
-    
+
     try {
         await saveTicketToDB(
             ticketData.code,
-            userId,
+            userSecret,
             ticketData.email || null,
             ticketData.phone || null
         );
