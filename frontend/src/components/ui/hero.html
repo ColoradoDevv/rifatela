@@ -1,0 +1,62 @@
+<div class="hero__carousel" role="region" aria-label="Carrusel promocional" aria-roledescription="carrusel">
+    <div class="hero__carousel-track" id="hero-carousel-track">
+        <!-- Slide 1: Promo Banner -->
+        <div class="hero__slide hero__slide--banner" role="group" aria-roledescription="diapositiva"
+            aria-label="Slide 1: Promoción Súper Rifa">
+            <div class="hero__banner-container">
+                <picture>
+                    <source media="(max-width: 600px)" srcset="../assets/images/banner-sm-vertical.jpg">
+                    <source media="(max-width: 1024px)" srcset="../assets/images/banner-md.jpg">
+                    <source media="(min-width: 1921px)" srcset="../assets/images/banner-xl.jpg">
+                    <img src="../assets/images/banner-lg.jpg"
+                        alt="Súper Rifa — Gana una NKD 125 y un iPhone 16. Compra tu boleta ahora." class="hero__banner"
+                        loading="eager">
+                </picture>
+            </div>
+        </div>
+
+        <!-- Slide 2: Interactive Tracking -->
+        <div class="hero__slide hero__slide--content" role="group" aria-roledescription="diapositiva"
+            aria-label="Slide 2: Seguimiento y exploración">
+            <div class="hero__content">
+                <div class="hero__main">
+                    <h1 class="hero__title">Gana la Rifa de tus Sueños con <span
+                            class="hero__title--accent">Rifatela</span></h1>
+                    <p class="hero__subtitle">Participa en los sorteos más exclusivos. Transparencia total, premios
+                        increíbles y emoción asegurada.</p>
+
+                    <div class="hero__actions">
+                        <button class="header__button header__button--primary"
+                            aria-label="Explorar rifas disponibles">Explorar Rifas</button>
+                        <button class="header__button header__button--outline" aria-label="Ver ganadores anteriores">Ver
+                            Ganadores</button>
+                    </div>
+                </div>
+
+                <div class="hero__card">
+                    <div class="hero__card-header">
+                        <h2 class="hero__card-title">Seguimiento de Boleta</h2>
+                        <p>Ingresa tu código personal para ver tu participación</p>
+                    </div>
+                    <form class="hero__form" id="tracking-form" aria-label="Formulario de seguimiento de boleta">
+                        <div class="hero__input-wrapper">
+                            <label for="boleta-code" class="visually-hidden">Código de boleta</label>
+                            <input type="text" class="hero__input" placeholder="Ej: 482913 (6 digitos)" id="boleta-code"
+                                required autocomplete="off">
+                        </div>
+                        <button type="submit" class="hero__track-btn">Seguir Participación</button>
+                    </form>
+                    <div id="tracking-result" class="hero__result" role="status" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Dots -->
+    <div class="hero__nav" role="tablist" aria-label="Controles del carrusel">
+        <button class="hero__nav-dot hero__nav-dot--active" data-index="0" role="tab" aria-selected="true"
+            aria-label="Ir a diapositiva 1"></button>
+        <button class="hero__nav-dot" data-index="1" role="tab" aria-selected="false"
+            aria-label="Ir a diapositiva 2"></button>
+    </div>
+</div>

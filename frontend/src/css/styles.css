@@ -1,0 +1,840 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
+
+/* --- DESIGN TOKENS --- */
+:root {
+    /* Colors */
+    --primary-color: #c40c0c;
+    --primary-hover: #a00a0a;
+    --secondary-color: #ff6500;
+    --accent-color: #f6ce71;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --bg-main: #FFFDF1;
+
+    /* Fluid Typography (clamp based) */
+    --font-size-base: clamp(1rem, 1vw + 0.75rem, 1.125rem);
+    --font-size-h1: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+    --font-size-h2: clamp(2rem, 4vw + 1rem, 3.5rem);
+    --font-size-h3: clamp(1.5rem, 3vw + 1rem, 2.5rem);
+    --font-size-p: clamp(1rem, 1.5vw + 0.5rem, 1.25rem);
+
+    /* Spacing */
+    --container-max-width: 1280px;
+    --section-padding: clamp(2.5rem, 8vw, 6rem);
+}
+
+/* --- MODERN RESET --- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #0a0a1a;
+    background-image:
+        radial-gradient(ellipse at 15% 30%, rgba(196, 12, 12, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 70%, rgba(255, 101, 0, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%, rgba(246, 206, 113, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(196, 12, 12, 0.1) 0%, transparent 60%);
+    color: #f0f0f0;
+    min-height: 100vh;
+    max-width: 100vw;
+    overflow-x: hidden;
+    line-height: 1.5;
+    font-size: var(--font-size-base);
+    position: relative;
+}
+
+/* --- ANIMATED BACKGROUND SYSTEM --- */
+
+/* Keyframes */
+@keyframes float-blob {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    25% {
+        transform: translate(80px, -60px) scale(1.1);
+    }
+
+    50% {
+        transform: translate(-40px, 40px) scale(0.95);
+    }
+
+    75% {
+        transform: translate(60px, 80px) scale(1.05);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(1.15);
+    }
+}
+
+@keyframes shimmer-move {
+    0% {
+        transform: translateX(-100%) rotate(25deg);
+    }
+
+    100% {
+        transform: translateX(200vw) rotate(25deg);
+    }
+}
+
+@keyframes sparkle {
+
+    0%,
+    100% {
+        opacity: 0;
+        transform: scale(0) rotate(0deg);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1) rotate(180deg);
+    }
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(-10vh) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(110vh) rotate(720deg);
+        opacity: 0.3;
+    }
+}
+
+@keyframes gradient-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Pulsing Neon Blobs */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: -1;
+    animation: float-blob 15s infinite ease-in-out;
+}
+
+body::before {
+    width: clamp(400px, 60vw, 800px);
+    height: clamp(400px, 60vw, 800px);
+    background: radial-gradient(circle, rgba(196, 12, 12, 0.2) 0%, rgba(255, 50, 50, 0.05) 50%, transparent 70%);
+    top: -15%;
+    right: -10%;
+    animation: float-blob 18s infinite ease-in-out, pulse-glow 4s infinite ease-in-out;
+}
+
+body::after {
+    width: clamp(350px, 50vw, 700px);
+    height: clamp(350px, 50vw, 700px);
+    background: radial-gradient(circle, rgba(255, 165, 0, 0.2) 0%, rgba(246, 206, 113, 0.05) 50%, transparent 70%);
+    bottom: -15%;
+    left: -10%;
+    animation: float-blob 22s infinite ease-in-out reverse, pulse-glow 5s infinite ease-in-out 1s;
+}
+
+/* Animated Background Overlay — injected via .bg-effects div */
+.bg-effects {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Golden Shimmer Streak */
+.bg-effects::before {
+    content: "";
+    position: absolute;
+    top: 30%;
+    left: -50%;
+    width: 200%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(246, 206, 113, 0.6), rgba(255, 215, 0, 0.8), rgba(246, 206, 113, 0.6), transparent);
+    animation: shimmer-move 6s infinite linear;
+    filter: blur(1px);
+}
+
+/* Secondary Shimmer */
+.bg-effects::after {
+    content: "";
+    position: absolute;
+    top: 65%;
+    left: -50%;
+    width: 200%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(196, 12, 12, 0.5), rgba(255, 50, 50, 0.7), rgba(196, 12, 12, 0.5), transparent);
+    animation: shimmer-move 8s infinite linear 3s;
+    filter: blur(1px);
+}
+
+/* Floating Confetti Particles (Pure CSS) */
+.confetti-particle {
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 2px;
+    animation: confetti-fall linear infinite;
+    opacity: 0.7;
+}
+
+.confetti-particle:nth-child(1) {
+    left: 5%;
+    width: 8px;
+    height: 8px;
+    background: #c40c0c;
+    animation-duration: 12s;
+    animation-delay: 0s;
+}
+
+.confetti-particle:nth-child(2) {
+    left: 15%;
+    width: 6px;
+    height: 10px;
+    background: #f6ce71;
+    animation-duration: 15s;
+    animation-delay: 2s;
+}
+
+.confetti-particle:nth-child(3) {
+    left: 25%;
+    width: 10px;
+    height: 6px;
+    background: #ff6500;
+    animation-duration: 10s;
+    animation-delay: 4s;
+}
+
+.confetti-particle:nth-child(4) {
+    left: 35%;
+    width: 7px;
+    height: 7px;
+    background: #ffd700;
+    animation-duration: 13s;
+    animation-delay: 1s;
+    border-radius: 50%;
+}
+
+.confetti-particle:nth-child(5) {
+    left: 48%;
+    width: 5px;
+    height: 12px;
+    background: #c40c0c;
+    animation-duration: 16s;
+    animation-delay: 3s;
+}
+
+.confetti-particle:nth-child(6) {
+    left: 58%;
+    width: 9px;
+    height: 5px;
+    background: #f6ce71;
+    animation-duration: 11s;
+    animation-delay: 5s;
+}
+
+.confetti-particle:nth-child(7) {
+    left: 68%;
+    width: 6px;
+    height: 9px;
+    background: #ff6500;
+    animation-duration: 14s;
+    animation-delay: 0.5s;
+    border-radius: 50%;
+}
+
+.confetti-particle:nth-child(8) {
+    left: 78%;
+    width: 8px;
+    height: 8px;
+    background: #ffd700;
+    animation-duration: 12s;
+    animation-delay: 6s;
+}
+
+.confetti-particle:nth-child(9) {
+    left: 88%;
+    width: 7px;
+    height: 11px;
+    background: #c40c0c;
+    animation-duration: 17s;
+    animation-delay: 2.5s;
+}
+
+.confetti-particle:nth-child(10) {
+    left: 95%;
+    width: 10px;
+    height: 6px;
+    background: #f6ce71;
+    animation-duration: 9s;
+    animation-delay: 7s;
+    border-radius: 50%;
+}
+
+/* Sparkle Stars */
+.sparkle-star {
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    width: 4px;
+    height: 4px;
+    background: #ffd700;
+    border-radius: 50%;
+    box-shadow: 0 0 6px 2px rgba(255, 215, 0, 0.6);
+    animation: sparkle 3s infinite ease-in-out;
+}
+
+.sparkle-star:nth-child(1) {
+    top: 10%;
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.sparkle-star:nth-child(2) {
+    top: 30%;
+    left: 80%;
+    animation-delay: 1s;
+}
+
+.sparkle-star:nth-child(3) {
+    top: 60%;
+    left: 10%;
+    animation-delay: 2s;
+}
+
+.sparkle-star:nth-child(4) {
+    top: 80%;
+    left: 70%;
+    animation-delay: 0.5s;
+}
+
+.sparkle-star:nth-child(5) {
+    top: 45%;
+    left: 50%;
+    animation-delay: 1.5s;
+}
+
+.sparkle-star:nth-child(6) {
+    top: 15%;
+    left: 65%;
+    animation-delay: 2.5s;
+}
+
+.sparkle-star:nth-child(7) {
+    top: 75%;
+    left: 35%;
+    animation-delay: 0.8s;
+}
+
+.sparkle-star:nth-child(8) {
+    top: 90%;
+    left: 90%;
+    animation-delay: 1.8s;
+}
+
+/* --- UTILITIES --- */
+.container {
+    width: 100%;
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.section-spacing {
+    padding: var(--section-padding) 0;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Screen-reader only class (accessible but invisible) */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    white-space: nowrap;
+}
+
+/* --- RAFFLE GRID & CARDS --- */
+#list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem 0;
+    list-style: none;
+}
+
+.raffle-item {
+    background: white;
+    border-radius: 24px;
+    padding: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.raffle-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px -15px rgba(196, 12, 12, 0.15);
+    border-color: rgba(196, 12, 12, 0.1);
+}
+
+.raffle-item h3 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.raffle-item p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.raffle-info {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+}
+
+.raffle-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.raffle-actions button {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.buy-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.buy-btn:hover {
+    background: var(--primary-hover);
+}
+
+.draw-btn {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.draw-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* --- COMPONENT STYLES (FALLBACKS) --- */
+header {
+    width: 100%;
+}
+
+main {
+    width: 100%;
+}
+
+.error {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* --- WHATSAPP FLOAT BUTTON --- */
+.bubble-float-container {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 1200;
+}
+
+.whatsapp-float {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #25d366, #1fb95a);
+    box-shadow: 0 12px 26px rgba(37, 211, 102, 0.45);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.whatsapp-float:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 16px 34px rgba(37, 211, 102, 0.55);
+}
+
+.whatsapp-float:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+}
+
+.whatsapp-float__icon {
+    width: 32px;
+    height: 32px;
+}
+
+@media (max-width: 767px) {
+    .bubble-float-container {
+        right: 0.9rem;
+        bottom: 0.9rem;
+    }
+
+    .whatsapp-float {
+        width: 54px;
+        height: 54px;
+    }
+
+    .whatsapp-float__icon {
+        width: 29px;
+        height: 29px;
+    }
+}
+
+/* --- MOBILE PERFORMANCE OPTIMIZATIONS --- */
+@media (max-width: 768px) {
+
+    /* Hide confetti on mobile — saves 10 animation layers */
+    .confetti-particle {
+        display: none !important;
+    }
+
+    /* Reduce sparkle stars — keep 3 but simpler */
+    .sparkle-star {
+        display: none !important;
+    }
+
+    .sparkle-star:nth-child(1),
+    .sparkle-star:nth-child(3),
+    .sparkle-star:nth-child(5) {
+        display: block !important;
+        animation-duration: 5s;
+    }
+
+    /* Reduce blob blur on mobile (blur is very expensive) */
+    body::before,
+    body::after {
+        filter: blur(60px);
+        animation: none;
+        opacity: 0.5;
+    }
+
+    /* Disable shimmer streaks on mobile */
+    .bg-effects::before,
+    .bg-effects::after {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/* GPU compositing hints for animated elements */
+body::before,
+body::after {
+    will-change: transform;
+    contain: strict;
+}
+
+.bg-effects {
+    contain: strict;
+}
+
+.confetti-particle {
+    will-change: transform;
+    contain: layout style;
+}
+
+.sparkle-star {
+    will-change: opacity, transform;
+    contain: layout style;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .confetti-particle,
+    .sparkle-star {
+        display: none !important;
+    }
+}
+
+/* --- MY TICKETS MODAL --- */
+.my-tickets-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInScale 0.3s ease-out;
+}
+
+.my-tickets-modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.my-tickets-modal__content {
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 24px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.my-tickets-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.my-tickets-modal__title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+}
+
+.my-tickets-modal__close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.my-tickets-modal__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+.my-tickets-modal__body {
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.my-tickets-modal__loading {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.my-tickets-modal__empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.my-tickets-modal__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.my-tickets-modal__ticket {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.my-tickets-modal__ticket:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.my-tickets-modal__ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.my-tickets-modal__ticket-code {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffd700;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+.my-tickets-modal__ticket-remove {
+    background: rgba(196, 12, 12, 0.2);
+    border: 1px solid rgba(196, 12, 12, 0.4);
+    color: #fca5a5;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.my-tickets-modal__ticket-remove:hover {
+    background: rgba(196, 12, 12, 0.4);
+    transform: scale(1.1);
+}
+
+.my-tickets-modal__ticket-info {
+    margin-bottom: 1rem;
+}
+
+.my-tickets-modal__ticket-raffle {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.my-tickets-modal__ticket-number {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.my-tickets-modal__ticket-track {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #c40c0c, #ff3333);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.my-tickets-modal__ticket-track:hover {
+    background: linear-gradient(135deg, #e11d48, #ff4444);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(196, 12, 12, 0.4);
+}
+
+@media (max-width: 767px) {
+    .my-tickets-modal__content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .my-tickets-modal__header {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .my-tickets-modal__body {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .my-tickets-modal__title {
+        font-size: 1.5rem;
+    }
+}

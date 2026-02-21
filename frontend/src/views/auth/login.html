@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Acceso interno - Rifatela">
+  <meta name="theme-color" content="#0a0a1a">
+  <title>Acceso interno | Rifatela</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/login.css">
+</head>
+
+<body>
+  <div class="bg-effects" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+
+  <main class="login-main" role="main">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-card__header">
+          <a href="/inicio" class="login-card__logo" aria-label="Rifatela - Ir al inicio">
+            <div class="login-card__logo-icon" aria-hidden="true">R</div>
+            <span>Rifatela</span>
+          </a>
+          <h1 class="login-card__title">Acceso interno</h1>
+          <p class="login-card__subtitle">Inicia sesion para acceder a tu panel</p>
+        </div>
+
+        <form class="login-form" id="login-form" aria-label="Formulario de inicio de sesion">
+          <div class="login-form__group">
+            <label for="username" class="login-form__label">Usuario</label>
+            <div class="login-form__input-wrapper">
+              <input type="text" id="username" name="username" class="login-form__input" placeholder="nombre_usuario" required autocomplete="username" aria-required="true">
+            </div>
+          </div>
+
+          <div class="login-form__group">
+            <label for="password" class="login-form__label">Contrasena</label>
+            <div class="login-form__input-wrapper">
+              <input type="password" id="password" name="password" class="login-form__input" placeholder="********" required autocomplete="current-password" aria-required="true">
+              <button type="button" class="login-form__toggle-password" aria-label="Mostrar u ocultar contrasena" id="toggle-password">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 3C5 3 1.73 7.11 1 10c.73 2.89 4 7 9 7s8.27-4.11 9-7c-.73-2.89-4-7-9-7zM10 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="login-form__options">
+            <label class="login-form__checkbox">
+              <input type="checkbox" name="remember" id="remember">
+              <span>Recordar sesion</span>
+            </label>
+          </div>
+
+          <div id="login-error" class="login-form__error" role="alert" aria-live="polite"></div>
+
+          <button type="submit" class="login-form__submit" id="login-submit">
+            <span class="login-form__submit-text">Entrar</span>
+            <span class="login-form__submit-loader" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <div class="login-card__footer">
+          <p class="login-card__footer-text">
+            <a href="/inicio" class="login-card__footer-link">Volver al inicio</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../../js/auth/login.js" type="module"></script>
+</body>
+
+</html>

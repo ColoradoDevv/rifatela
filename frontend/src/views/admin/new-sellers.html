@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gestion de vendedores - Rifatela">
+  <meta name="theme-color" content="#0a0a1a">
+  <title>Vendedores | Rifatela Admin</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/admin.css">
+</head>
+
+<body data-allowed-roles="admin">
+  <div class="bg-effects" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+
+  <div id="auth-check-loading" class="admin-loading-screen">
+    <div class="admin-loading-content">
+      <div class="admin-loading-spinner"></div>
+      <p>Validando sesion...</p>
+    </div>
+  </div>
+
+  <div id="protected-content" style="display:none;">
+    <header class="header-container" role="banner"></header>
+
+    <main class="admin-main admin-main--dashboard" role="main">
+      <div class="dashboard-shell">
+        <aside class="dashboard-shell__sidebar" aria-label="Navegacion administrativa">
+          <div class="dashboard-brand">
+            <div class="dashboard-brand__icon">R</div>
+            <div>
+              <p class="dashboard-brand__title">Rifatela</p>
+              <p class="dashboard-brand__subtitle">Control Admin</p>
+            </div>
+          </div>
+
+          <nav class="dashboard-nav">
+            <a class="dashboard-nav__item" href="/admin">Dashboard</a>
+            <a class="dashboard-nav__item dashboard-nav__item--active" href="#">Crear vendedores</a>
+            <a class="dashboard-nav__item" href="/ventas">Ir a ventas</a>
+          </nav>
+        </aside>
+
+        <section class="dashboard-shell__main">
+          <div class="dashboard-topbar">
+            <div>
+              <h1 class="dashboard-topbar__title">Gestion de vendedores, <span id="dashboard-username">Admin</span></h1>
+              <p class="dashboard-topbar__subtitle">Crea cuentas de vendedores y revisa el listado actual.</p>
+            </div>
+            <div class="dashboard-topbar__actions">
+              <a href="/admin" class="dashboard-btn dashboard-btn--outline">Volver al dashboard</a>
+              <button id="logout-btn" class="dashboard-btn dashboard-btn--solid">Cerrar sesion</button>
+            </div>
+          </div>
+
+          <section class="dashboard-bottom-grid">
+            <article class="dashboard-card" aria-label="Crear vendedor">
+              <h3>Crear cuenta de vendedor</h3>
+              <form id="create-seller-form" class="admin-form admin-form--compact">
+                <div class="admin-form__group">
+                  <button type="button" id="generate-random-credentials" class="dashboard-btn dashboard-btn--outline">
+                    Generar usuario y contrasena aleatorios
+                  </button>
+                  <p class="admin-form__help">Opcional: puedes editar los datos antes de guardar.</p>
+                </div>
+                <div class="admin-form__group">
+                  <label class="admin-form__label" for="seller-username">Usuario</label>
+                  <input id="seller-username" name="username" class="admin-form__input" required>
+                </div>
+                <div class="admin-form__group">
+                  <label class="admin-form__label" for="seller-email">Email (opcional)</label>
+                  <input id="seller-email" name="email" type="email" class="admin-form__input">
+                </div>
+                <div class="admin-form__group">
+                  <label class="admin-form__label" for="seller-password">Contrasena temporal</label>
+                  <div class="admin-password-field">
+                    <input id="seller-password" name="password" type="password" class="admin-form__input" required>
+                    <button type="button" id="toggle-seller-password" class="admin-password-field__toggle" aria-label="Mostrar u ocultar contrasena">
+                      <span aria-hidden="true">👁</span>
+                    </button>
+                  </div>
+                </div>
+                <p id="seller-form-error" class="dashboard-inline-error"></p>
+                <p id="seller-form-success" class="dashboard-inline-success"></p>
+                <button type="submit" class="admin-form__submit">Crear vendedor</button>
+              </form>
+            </article>
+
+            <article class="dashboard-card" aria-label="Lista de vendedores">
+              <h3>Vendedores registrados</h3>
+              <div class="dashboard-table-wrapper">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Email</th>
+                      <th>Creado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sellers-table-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/admin/auth-check.js" type="module"></script>
+  <script src="../../js/admin/new-sellers.js" type="module"></script>
+</body>
+
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard de administracion - Rifatela">
+  <meta name="theme-color" content="#0a0a1a">
+  <title>Dashboard Admin | Rifatela</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/admin.css">
+</head>
+
+<body data-allowed-roles="admin">
+  <div class="bg-effects" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="confetti-particle" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+  <div class="sparkle-star" aria-hidden="true"></div>
+
+  <div id="auth-check-loading" class="admin-loading-screen">
+    <div class="admin-loading-content">
+      <div class="admin-loading-spinner"></div>
+      <p>Validando sesion...</p>
+    </div>
+  </div>
+
+  <div id="protected-content" style="display:none;">
+    <header class="header-container" role="banner"></header>
+
+    <main class="admin-main admin-main--dashboard" role="main">
+      <div class="dashboard-shell">
+        <aside class="dashboard-shell__sidebar" aria-label="Navegacion administrativa">
+          <div class="dashboard-brand">
+            <div class="dashboard-brand__icon">R</div>
+            <div>
+              <p class="dashboard-brand__title">Rifatela</p>
+              <p class="dashboard-brand__subtitle">Control Admin</p>
+            </div>
+          </div>
+
+          <nav class="dashboard-nav">
+            <a class="dashboard-nav__item dashboard-nav__item--active" href="#">Dashboard</a>
+            <a class="dashboard-nav__item" href="/admin/vendedores">Crear vendedores</a>
+            <a class="dashboard-nav__item" href="/ventas">Ir a ventas</a>
+          </nav>
+
+          <!-- <div class="dashboard-sidebar__cta">
+            <p>Panel privado de administracion</p>
+            <a class="dashboard-sidebar__cta-btn" href="/ventas">Registrar venta</a>
+          </div> -->
+        </aside>
+
+        <section class="dashboard-shell__main">
+          <div class="dashboard-topbar">
+            <div>
+              <h1 class="dashboard-topbar__title">Bienvenido, <span id="dashboard-username">Admin</span></h1>
+              <p class="dashboard-topbar__subtitle">Resumen operativo de rifas, ventas e ingresos.</p>
+            </div>
+            <div class="dashboard-topbar__actions">
+              <a href="/ventas" class="dashboard-btn dashboard-btn--outline">Registrar venta</a>
+              <button id="logout-btn" class="dashboard-btn dashboard-btn--solid">Cerrar sesion</button>
+            </div>
+          </div>
+
+          <p id="dashboard-error" class="dashboard-error"></p>
+
+          <section class="dashboard-kpis" aria-label="Indicadores principales">
+            <article class="dashboard-kpi">
+              <h2>Rifas Totales</h2>
+              <p id="stat-total-raffles">0</p>
+            </article>
+            <article class="dashboard-kpi">
+              <h2>Rifas Activas</h2>
+              <p id="stat-active-raffles">0</p>
+            </article>
+            <article class="dashboard-kpi">
+              <h2>Boletas Vendidas</h2>
+              <p id="stat-total-sales">0</p>
+            </article>
+            <article class="dashboard-kpi dashboard-kpi--accent">
+              <h2>Ingresos Totales</h2>
+              <p id="stat-revenue">$0</p>
+            </article>
+          </section>
+
+          <section class="dashboard-grid" aria-label="Panel principal de estadisticas">
+            <article class="dashboard-card dashboard-card--chart">
+              <div class="dashboard-card__header">
+                <h3>Panorama de ingresos</h3>
+                <span class="dashboard-tag">Datos reales: ultimos 12 meses</span>
+              </div>
+              <div class="dashboard-chart" aria-label="Grafica real de ingresos mensuales">
+                <svg id="revenue-chart" viewBox="0 0 720 280" role="img" aria-label="Ingresos por mes">
+                  <defs>
+                    <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#f6ce71" stop-opacity="0.45"></stop>
+                      <stop offset="100%" stop-color="#f6ce71" stop-opacity="0.02"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path id="revenue-area" fill="url(#revenueAreaGradient)" d=""></path>
+                  <path id="revenue-line" fill="none" stroke="#ff6500" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d=""></path>
+                  <g id="revenue-points"></g>
+                </svg>
+                <div id="revenue-chart-labels" class="dashboard-chart__labels"></div>
+              </div>
+            </article>
+
+            <article class="dashboard-card">
+              <h3>Rifas con mas ventas</h3>
+              <ul id="top-raffles-list" class="dashboard-list"></ul>
+            </article>
+
+            <article class="dashboard-card">
+              <h3>Ranking de vendedores</h3>
+              <ul id="seller-ranking-list" class="dashboard-list"></ul>
+            </article>
+          </section>
+
+          <section class="dashboard-card" aria-label="Ventas recientes">
+            <h3>Ventas recientes</h3>
+            <div class="dashboard-table-wrapper">
+              <table class="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Codigo</th>
+                    <th>Rifa</th>
+                    <th>Cliente</th>
+                    <th>Registrado por</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-sales-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../../js/admin/auth-check.js" type="module"></script>
+  <script src="../../js/admin/dashboard.js" type="module"></script>
+</body>
+
+</html>
