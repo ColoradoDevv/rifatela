@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
+const fs = require('fs');
 const connectDB = require('./config/db');
 const { CORS_ORIGIN } = require('./config/env');
 const rafflesRoutes = require('./routes/raffles');
@@ -67,13 +69,20 @@ app.use('/api', (_req, res) => {
   res.status(404).json({ message: 'API endpoint not found' });
 });
 
-app.get('/', (_req, res) => {
-  res.status(200).json({
-    service: 'rifatela-backend',
-    status: 'online',
-    health: '/api/health'
-  });
+const frontendEnabled = mountFrontend(app, {
+  serveFrontend: isTruthy(process.env.SERVE_FRONTEND),
+  frontendSrcDir: path.resolve(__dirname, '../../frontend/src')
 });
+
+if (!frontendEnabled) {
+  app.get('/', (_req, res) => {
+    res.status(200).json({
+      service: 'rifatela-backend',
+      status: 'online',
+      health: '/api/health'
+    });
+  });
+}
 
 app.use((err, _req, res, next) => {
   if (!err) return next();
@@ -88,8 +97,70 @@ app.use((err, _req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
-  console.log('Mode: API only');
+  console.log(frontendEnabled ? 'Mode: API + Frontend routes' : 'Mode: API only');
 });
+
+function mountFrontend(appInstance, options) {
+  const { serveFrontend, frontendSrcDir } = options;
+  if (!serveFrontend) {
+    return false;
+  }
+
+  const frontendViewsDir = path.join(frontendSrcDir, 'views');
+  if (!fs.existsSync(frontendSrcDir) || !fs.existsSync(frontendViewsDir)) {
+    console.warn('WARN: SERVE_FRONTEND=true but frontend/src was not found. Running API only.');
+    return false;
+  }
+
+  const staticPaths = [
+    ['/src', frontendSrcDir],
+    ['/css', path.join(frontendSrcDir, 'css')],
+    ['/js', path.join(frontendSrcDir, 'js')],
+    ['/assets', path.join(frontendSrcDir, 'assets')],
+    ['/config', path.join(frontendSrcDir, 'config')],
+    ['/components', path.join(frontendSrcDir, 'components')],
+    ['/views', path.join(frontendSrcDir, 'views')]
+  ];
+
+  staticPaths.forEach(([route, dirPath]) => {
+    if (fs.existsSync(dirPath)) {
+      appInstance.use(route, express.static(dirPath));
+    }
+  });
+
+  const viewRoutes = {
+    '/': 'index.html',
+    '/inicio': 'index.html',
+    '/rifas': 'rifas.html',
+    '/login': 'auth/login.html',
+    '/admin': 'admin/dashboard.html',
+    '/dashboard': 'admin/dashboard.html',
+    '/admin/vendedores': 'admin/new-sellers.html',
+    '/admin/new-sellers': 'admin/new-sellers.html',
+    '/ventas': 'seller/register-sale.html',
+    '/admin/register-sale': 'seller/register-sale.html',
+    '/ganadores': 'index.html',
+    '/soporte': 'index.html'
+  };
+
+  Object.entries(viewRoutes).forEach(([route, relativeViewPath]) => {
+    const routeVariants = route === '/' ? ['/'] : [route, `${route}/`];
+    const absoluteViewPath = path.join(frontendViewsDir, relativeViewPath);
+    routeVariants.forEach((variant) => {
+      appInstance.get(variant, (_req, res) => {
+        res.sendFile(absoluteViewPath);
+      });
+    });
+  });
+
+  return true;
+}
+
+function isTruthy(value) {
+  if (value == null) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === 'true' || normalized === '1' || normalized === 'yes';
+}
 
 function parseCorsOrigins(rawValue) {
   if (rawValue == null || rawValue === true || rawValue === 'true') {
