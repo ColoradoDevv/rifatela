@@ -1,34 +1,103 @@
-const Raffle = require('../models/raffle.model');
-const SavedTicket = require('../models/savedTicket.model');
+const { supabase, isNoRowsError } = require('../config/supabase');
 const raffleService = require('../services/raffle.service');
 
 const { TICKET_PRICE_COP, MAX_TICKETS } = raffleService;
 
-// GET /api/raffles — paginado
+function mapRaffleRow(row) {
+  return {
+    _id: row.id,
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    prize: row.prize,
+    pricePerTicket: row.price_per_ticket,
+    totalTickets: row.total_tickets ?? MAX_TICKETS,
+    ticketsSold: row.tickets_sold ?? 0,
+    status: row.status,
+    winner: row.winner || null,
+    drawDate: row.draw_date || null,
+    createdAt: row.created_at
+  };
+}
+
+function mapParticipantRow(row) {
+  return {
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    ticketNumber: row.ticket_number,
+    code: row.code,
+    boughtAt: row.bought_at,
+    paymentMethod: row.payment_method,
+    registeredBy: row.registered_by
+  };
+}
+
+function mapSavedTicketRow(row) {
+  return {
+    _id: row.id,
+    id: row.id,
+    code: row.code,
+    ticketNumber: row.ticket_number,
+    raffleTitle: row.raffle_title,
+    raffleId: row.raffle_id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    boughtAt: row.bought_at,
+    savedAt: row.saved_at,
+    userSecret: row.user_secret
+  };
+}
+
+async function fetchRaffleById(id) {
+  const { data, error } = await supabase
+    .from('raffles')
+    .select('id,title,description,prize,price_per_ticket,total_tickets,tickets_sold,status,winner,draw_date,created_at')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error && !isNoRowsError(error)) {
+    throw error;
+  }
+
+  return data || null;
+}
+
+async function countParticipantsByRaffleId(raffleId) {
+  const { count, error } = await supabase
+    .from('raffle_participants')
+    .select('id', { head: true, count: 'exact' })
+    .eq('raffle_id', raffleId);
+
+  if (error) throw error;
+  return count || 0;
+}
+
+// GET /api/raffles - paginado
 exports.list = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
-      Raffle.find()
-        .select('-participants')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Raffle.countDocuments()
-    ]);
+    const { data, error, count } = await supabase
+      .from('raffles')
+      .select('id,title,description,prize,price_per_ticket,total_tickets,tickets_sold,status,winner,draw_date,created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(skip, skip + limit - 1);
 
-    const normalized = items.map((item) => ({
-      ...item,
+    if (error) throw error;
+
+    const items = (data || []).map((row) => ({
+      ...mapRaffleRow(row),
       totalTickets: MAX_TICKETS,
-      ticketsSold: item.ticketsSold ?? 0
+      ticketsSold: row.tickets_sold ?? 0
     }));
 
+    const total = count || 0;
     res.json({
-      items: normalized,
+      items,
       total,
       page,
       limit,
@@ -42,11 +111,30 @@ exports.list = async (req, res) => {
 // GET /api/raffles/:id
 exports.getById = async (req, res) => {
   try {
-    const raffle = await Raffle.findById(req.params.id).lean();
+    const raffle = await fetchRaffleById(req.params.id);
     if (!raffle) return res.status(404).json({ message: 'Rifa no encontrada' });
-    const ticketsSold = raffle.participants?.length ?? raffle.ticketsSold ?? 0;
-    res.json({ ...raffle, ticketsSold, totalTickets: MAX_TICKETS });
+
+    const { data: participantsRows, error: participantsError } = await supabase
+      .from('raffle_participants')
+      .select('name,email,phone,ticket_number,code,bought_at,payment_method,registered_by')
+      .eq('raffle_id', req.params.id)
+      .order('ticket_number', { ascending: true });
+
+    if (participantsError) throw participantsError;
+
+    const participants = (participantsRows || []).map(mapParticipantRow);
+    const ticketsSold = participants.length || raffle.tickets_sold || 0;
+
+    res.json({
+      ...mapRaffleRow(raffle),
+      participants,
+      ticketsSold,
+      totalTickets: MAX_TICKETS
+    });
   } catch (err) {
+    if (err.code === '22P02') {
+      return res.status(404).json({ message: 'Rifa no encontrada' });
+    }
     res.status(500).json({ message: 'Error al obtener la rifa', error: err.message });
   }
 };
@@ -57,14 +145,22 @@ exports.create = async (req, res) => {
     const { title, description } = req.body;
     if (!title) return res.status(400).json({ message: 'El titulo es obligatorio' });
 
-    const raffle = new Raffle({
-      title,
-      description,
-      pricePerTicket: TICKET_PRICE_COP,
-      totalTickets: MAX_TICKETS
-    });
-    await raffle.save();
-    res.status(201).json(raffle);
+    const { data, error } = await supabase
+      .from('raffles')
+      .insert({
+        title,
+        description: description || null,
+        price_per_ticket: TICKET_PRICE_COP,
+        total_tickets: MAX_TICKETS,
+        tickets_sold: 0,
+        status: 'active'
+      })
+      .select('id,title,description,prize,price_per_ticket,total_tickets,tickets_sold,status,winner,draw_date,created_at')
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(mapRaffleRow(data));
   } catch (err) {
     res.status(500).json({ message: 'Error al crear la rifa', error: err.message });
   }
@@ -98,7 +194,7 @@ exports.registerSale = async (req, res) => {
   }
 };
 
-// GET /api/raffles/admin/stats — agregaciones MongoDB
+// GET /api/raffles/admin/stats
 exports.adminStats = async (_req, res) => {
   try {
     const now = new Date();
@@ -114,112 +210,80 @@ exports.adminStats = async (_req, res) => {
       });
     }
 
-    const [countsResult, totalsResult, topRafflesAgg, sellerAgg, recentSalesAgg, monthlyAgg] = await Promise.all([
-      Raffle.aggregate([
-        {
-          $facet: {
-            total: [{ $count: 'n' }],
-            byStatus: [{ $group: { _id: '$status', n: { $sum: 1 } } }]
-          }
-        }
-      ]),
-      Raffle.aggregate([
-        { $project: { count: { $size: { $ifNull: ['$participants', []] } } } },
-        {
-          $group: {
-            _id: null,
-            totalTicketsSold: { $sum: '$count' },
-            grossRevenue: { $sum: { $multiply: ['$count', TICKET_PRICE_COP] } }
-          }
-        }
-      ]),
-      Raffle.aggregate([
-        {
-          $project: {
-            title: 1,
-            status: 1,
-            ticketsSold: { $size: { $ifNull: ['$participants', []] } }
-          }
-        },
-        { $sort: { ticketsSold: -1 } },
-        { $limit: 5 },
-        {
-          $project: {
-            id: '$_id',
-            title: 1,
-            status: 1,
-            ticketsSold: 1,
-            totalTickets: { $literal: MAX_TICKETS },
-            revenue: { $multiply: ['$ticketsSold', TICKET_PRICE_COP] },
-            _id: 0
-          }
-        }
-      ]),
-      Raffle.aggregate([
-        { $unwind: '$participants' },
-        {
-          $group: {
-            _id: { $ifNull: ['$participants.registeredBy', 'public'] },
-            sales: { $sum: 1 }
-          }
-        },
-        { $sort: { sales: -1 } },
-        { $project: { seller: '$_id', sales: 1, _id: 0 } }
-      ]),
-      Raffle.aggregate([
-        { $unwind: '$participants' },
-        { $sort: { 'participants.boughtAt': -1 } },
-        { $limit: 15 },
-        {
-          $project: {
-            raffleTitle: '$title',
-            ticketNumber: '$participants.ticketNumber',
-            code: '$participants.code',
-            buyerName: '$participants.name',
-            paymentMethod: { $ifNull: ['$participants.paymentMethod', 'WhatsApp'] },
-            registeredBy: { $ifNull: ['$participants.registeredBy', 'public'] },
-            boughtAt: '$participants.boughtAt',
-            _id: 0
-          }
-        }
-      ]),
-      Raffle.aggregate([
-        { $unwind: '$participants' },
-        {
-          $project: {
-            monthKey: {
-              $dateToString: {
-                format: '%Y-%m',
-                date: { $ifNull: ['$participants.boughtAt', new Date()] }
-              }
-            },
-            revenue: { $literal: TICKET_PRICE_COP }
-          }
-        },
-        { $group: { _id: '$monthKey', sales: { $sum: 1 }, revenue: { $sum: '$revenue' } } }
-      ])
+    const [rafflesResult, participantsResult] = await Promise.all([
+      supabase.from('raffles').select('id,title,status'),
+      supabase.from('raffle_participants').select('raffle_id,ticket_number,code,name,payment_method,registered_by,bought_at')
     ]);
 
-    const facet = countsResult[0] || {};
-    const totalRaffles = facet.total?.[0]?.n ?? 0;
-    const byStatus = (facet.byStatus ?? []).reduce((acc, s) => {
-      acc[s._id] = s.n;
-      return acc;
-    }, {});
-    const activeRaffles = byStatus.active ?? 0;
-    const completedRaffles = byStatus.completed ?? 0;
+    if (rafflesResult.error) throw rafflesResult.error;
+    if (participantsResult.error) throw participantsResult.error;
 
-    const totals = totalsResult[0] || {};
-    const totalTicketsSold = totals.totalTicketsSold ?? 0;
-    const grossRevenue = totals.grossRevenue ?? 0;
+    const raffles = rafflesResult.data || [];
+    const participants = participantsResult.data || [];
 
-    for (const row of monthlyAgg) {
-      const bucket = monthlyMap.get(row._id);
-      if (bucket) {
-        bucket.sales = row.sales;
-        bucket.revenue = row.revenue;
+    const totalRaffles = raffles.length;
+    const activeRaffles = raffles.filter((r) => r.status === 'active').length;
+    const completedRaffles = raffles.filter((r) => r.status === 'completed').length;
+    const totalTicketsSold = participants.length;
+    const grossRevenue = totalTicketsSold * TICKET_PRICE_COP;
+
+    const raffleById = new Map(raffles.map((r) => [r.id, r]));
+    const salesByRaffle = new Map();
+    const salesBySeller = new Map();
+
+    for (const participant of participants) {
+      const raffleId = participant.raffle_id;
+      salesByRaffle.set(raffleId, (salesByRaffle.get(raffleId) || 0) + 1);
+
+      const seller = participant.registered_by || 'public';
+      salesBySeller.set(seller, (salesBySeller.get(seller) || 0) + 1);
+
+      const date = participant.bought_at ? new Date(participant.bought_at) : now;
+      if (!Number.isNaN(date.getTime())) {
+        const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+        const bucket = monthlyMap.get(monthKey);
+        if (bucket) {
+          bucket.sales += 1;
+          bucket.revenue += TICKET_PRICE_COP;
+        }
       }
     }
+
+    const topRaffles = raffles
+      .map((raffle) => {
+        const ticketsSold = salesByRaffle.get(raffle.id) || 0;
+        return {
+          id: raffle.id,
+          title: raffle.title,
+          status: raffle.status,
+          ticketsSold,
+          totalTickets: MAX_TICKETS,
+          revenue: ticketsSold * TICKET_PRICE_COP
+        };
+      })
+      .sort((a, b) => b.ticketsSold - a.ticketsSold)
+      .slice(0, 5);
+
+    const sellerRanking = Array.from(salesBySeller.entries())
+      .map(([seller, sales]) => ({ seller, sales }))
+      .sort((a, b) => b.sales - a.sales);
+
+    const recentSales = [...participants]
+      .sort((a, b) => {
+        const aTime = a.bought_at ? new Date(a.bought_at).getTime() : 0;
+        const bTime = b.bought_at ? new Date(b.bought_at).getTime() : 0;
+        return bTime - aTime;
+      })
+      .slice(0, 15)
+      .map((participant) => ({
+        raffleTitle: raffleById.get(participant.raffle_id)?.title || 'Rifa',
+        ticketNumber: participant.ticket_number,
+        code: participant.code,
+        buyerName: participant.name,
+        paymentMethod: participant.payment_method || 'WhatsApp',
+        registeredBy: participant.registered_by || 'public',
+        boughtAt: participant.bought_at
+      }));
 
     res.json({
       success: true,
@@ -230,10 +294,10 @@ exports.adminStats = async (_req, res) => {
         totalTicketsSold,
         grossRevenue
       },
-      topRaffles: topRafflesAgg,
-      sellerRanking: sellerAgg,
+      topRaffles,
+      sellerRanking,
       monthlyRevenueSeries: Array.from(monthlyMap.values()),
-      recentSales: recentSalesAgg
+      recentSales
     });
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener estadisticas', error: err.message });
@@ -244,43 +308,37 @@ exports.adminStats = async (_req, res) => {
 exports.trackTicket = async (req, res) => {
   try {
     const { code } = req.params;
-    const upperCode = code.toUpperCase();
+    const upperCode = String(code || '').toUpperCase();
 
-    const raffle = await Raffle.findOne(
-      { 'participants.code': upperCode },
-      {
-        title: 1,
-        description: 1,
-        prize: 1,
-        status: 1,
-        winner: 1,
-        pricePerTicket: 1,
-        totalTickets: 1,
-        ticketsSold: 1,
-        drawDate: 1,
-        createdAt: 1,
-        'participants.$': 1
-      }
-    ).lean();
+    const { data: participant, error: participantError } = await supabase
+      .from('raffle_participants')
+      .select('raffle_id,name,email,phone,ticket_number,code,bought_at')
+      .eq('code', upperCode)
+      .maybeSingle();
 
-    if (!raffle || !raffle.participants?.length) {
+    if (participantError && !isNoRowsError(participantError)) throw participantError;
+    if (!participant) {
       return res.status(404).json({ message: 'Boleta no encontrada' });
     }
 
-    const participant = raffle.participants[0];
-    const ticketsSold = raffle.participants?.length ?? raffle.ticketsSold ?? 0;
+    const raffle = await fetchRaffleById(participant.raffle_id);
+    if (!raffle) {
+      return res.status(404).json({ message: 'Rifa no encontrada' });
+    }
+
+    const ticketsSold = await countParticipantsByRaffleId(raffle.id);
 
     res.json({
-      ...raffle,
+      ...mapRaffleRow(raffle),
       ticketsSold,
       totalTickets: MAX_TICKETS,
       participant: {
         name: participant.name,
         email: participant.email,
         phone: participant.phone,
-        ticketNumber: participant.ticketNumber,
+        ticketNumber: participant.ticket_number,
         code: participant.code,
-        boughtAt: participant.boughtAt
+        boughtAt: participant.bought_at
       }
     });
   } catch (err) {
@@ -292,22 +350,54 @@ exports.trackTicket = async (req, res) => {
 exports.drawWinner = async (req, res) => {
   try {
     const { id } = req.params;
-    const raffle = await Raffle.findById(id);
+    const raffle = await fetchRaffleById(id);
 
     if (!raffle) return res.status(404).json({ message: 'Rifa no encontrada' });
 
-    const winnerData = raffleService.drawWinnerInternal(raffle);
-    raffle.winner = winnerData;
-    raffle.status = 'completed';
-    await raffle.save();
+    if (raffle.status === 'completed') {
+      return res.status(400).json({ message: 'Esta rifa ya fue sorteada', winner: raffle.winner || null });
+    }
 
-    res.json({ winner: raffle.winner, message: `Felicidades a ${winnerData.name}` });
+    const { data: participantsRows, error: participantsError } = await supabase
+      .from('raffle_participants')
+      .select('name,email,code,ticket_number')
+      .eq('raffle_id', id);
+
+    if (participantsError) throw participantsError;
+
+    const participants = (participantsRows || []).map((row) => ({
+      name: row.name,
+      email: row.email,
+      code: row.code,
+      ticketNumber: row.ticket_number
+    }));
+
+    const winnerData = raffleService.drawWinnerInternal({
+      status: raffle.status,
+      participants
+    });
+
+    const { error: updateError } = await supabase
+      .from('raffles')
+      .update({
+        winner: winnerData,
+        status: 'completed',
+        draw_date: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
+
+    res.json({ winner: winnerData, message: `Felicidades a ${winnerData.name}` });
   } catch (err) {
     if (err.message === 'No hay participantes') {
       return res.status(400).json({ message: err.message });
     }
     if (err.message === 'Esta rifa ya fue sorteada') {
-      return res.status(400).json({ message: err.message, winner: (await Raffle.findById(req.params.id).select('winner').lean())?.winner });
+      return res.status(400).json({ message: err.message });
+    }
+    if (err.code === '22P02') {
+      return res.status(404).json({ message: 'Rifa no encontrada' });
     }
     res.status(500).json({ message: 'Error en el sorteo', error: err.message });
   }
@@ -324,62 +414,81 @@ exports.saveTicket = async (req, res) => {
   try {
     const { code, userSecret, email, phone } = req.body;
     const secret = userSecret || getUserSecretFromRequest(req);
+    const upperCode = String(code || '').toUpperCase();
 
-    if (!code || !secret) {
+    if (!upperCode || !secret) {
       return res.status(400).json({ message: 'Codigo y userSecret son obligatorios' });
     }
     if (!UUID_REGEX.test(secret)) {
-      return res.status(400).json({ message: 'userSecret debe ser un UUID válido' });
+      return res.status(400).json({ message: 'userSecret debe ser un UUID valido' });
     }
 
-    const raffle = await Raffle.findOne(
-      { 'participants.code': code.toUpperCase() },
-      { title: 1, _id: 1, 'participants.$': 1 }
-    ).lean();
+    const { data: participant, error: participantError } = await supabase
+      .from('raffle_participants')
+      .select('raffle_id,name,email,phone,ticket_number,code,bought_at')
+      .eq('code', upperCode)
+      .maybeSingle();
 
-    if (!raffle || !raffle.participants || raffle.participants.length === 0) {
+    if (participantError && !isNoRowsError(participantError)) throw participantError;
+    if (!participant) {
       return res.status(404).json({ message: 'Boleta no encontrada' });
     }
 
-    const participant = raffle.participants[0];
+    const raffle = await fetchRaffleById(participant.raffle_id);
+    if (!raffle) {
+      return res.status(404).json({ message: 'Rifa no encontrada' });
+    }
 
-    const existing = await SavedTicket.findOne({ code: code.toUpperCase(), userSecret: secret });
+    const { data: existing, error: existingError } = await supabase
+      .from('saved_tickets')
+      .select('*')
+      .eq('code', upperCode)
+      .eq('user_secret', secret)
+      .maybeSingle();
+
+    if (existingError && !isNoRowsError(existingError)) throw existingError;
     if (existing) {
       return res.json({
         success: true,
         message: 'Boleta ya guardada',
-        ticket: existing
+        ticket: mapSavedTicketRow(existing)
       });
     }
 
-    const savedTicket = new SavedTicket({
-      code: code.toUpperCase(),
-      ticketNumber: participant.ticketNumber,
-      raffleTitle: raffle.title,
-      raffleId: raffle._id,
-      name: participant.name,
-      email: email || participant.email,
-      phone: phone || participant.phone,
-      boughtAt: participant.boughtAt,
-      userSecret: secret
-    });
+    const { data: savedTicket, error: insertError } = await supabase
+      .from('saved_tickets')
+      .insert({
+        code: upperCode,
+        ticket_number: participant.ticket_number,
+        raffle_title: raffle.title,
+        raffle_id: raffle.id,
+        name: participant.name,
+        email: email || participant.email,
+        phone: phone || participant.phone,
+        bought_at: participant.bought_at,
+        user_secret: secret
+      })
+      .select('*')
+      .single();
 
-    await savedTicket.save();
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return res.status(400).json({ message: 'Esta boleta ya esta guardada' });
+      }
+      throw insertError;
+    }
 
     res.json({
       success: true,
       message: 'Boleta guardada exitosamente',
-      ticket: savedTicket
+      ticket: mapSavedTicketRow(savedTicket)
     });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ message: 'Esta boleta ya esta guardada' });
-    }
     res.status(500).json({ message: 'Error al guardar la boleta', error: err.message });
   }
 };
 
-// GET /api/raffles/tickets/my — header X-User-Secret obligatorio
+// GET /api/raffles/tickets/my - header X-User-Secret obligatorio
 exports.getMyTickets = async (req, res) => {
   try {
     const userSecret = getUserSecretFromRequest(req);
@@ -388,36 +497,50 @@ exports.getMyTickets = async (req, res) => {
       return res.status(400).json({ message: 'Header X-User-Secret o body.userSecret es obligatorio' });
     }
     if (!UUID_REGEX.test(userSecret)) {
-      return res.status(400).json({ message: 'userSecret debe ser un UUID válido' });
+      return res.status(400).json({ message: 'userSecret debe ser un UUID valido' });
     }
 
-    const savedTickets = await SavedTicket.find({ userSecret }).sort({ savedAt: -1 }).lean();
+    const { data, error } = await supabase
+      .from('saved_tickets')
+      .select('*')
+      .eq('user_secret', userSecret)
+      .order('saved_at', { ascending: false });
 
+    if (error) throw error;
+
+    const savedTickets = (data || []).map(mapSavedTicketRow);
     res.json({ success: true, tickets: savedTickets, count: savedTickets.length });
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener las boletas', error: err.message });
   }
 };
 
-// DELETE /api/raffles/tickets/:code — header X-User-Secret obligatorio
+// DELETE /api/raffles/tickets/:code - header X-User-Secret obligatorio
 exports.removeSavedTicket = async (req, res) => {
   try {
     const { code } = req.params;
     const userSecret = getUserSecretFromRequest(req);
+    const upperCode = String(code || '').toUpperCase();
 
-    if (!code) {
+    if (!upperCode) {
       return res.status(400).json({ message: 'Codigo es obligatorio' });
     }
     if (!userSecret) {
       return res.status(400).json({ message: 'Header X-User-Secret o body.userSecret es obligatorio' });
     }
     if (!UUID_REGEX.test(userSecret)) {
-      return res.status(400).json({ message: 'userSecret debe ser un UUID válido' });
+      return res.status(400).json({ message: 'userSecret debe ser un UUID valido' });
     }
 
-    const deleted = await SavedTicket.findOneAndDelete({ code: code.toUpperCase(), userSecret });
+    const { data, error } = await supabase
+      .from('saved_tickets')
+      .delete()
+      .eq('code', upperCode)
+      .eq('user_secret', userSecret)
+      .select('id');
 
-    if (!deleted) {
+    if (error) throw error;
+    if (!data || data.length === 0) {
       return res.status(404).json({ message: 'Boleta no encontrada' });
     }
 

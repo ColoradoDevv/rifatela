@@ -1,7 +1,20 @@
-const User = require('../models/user.model');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/env');
 const { buildAuthCookieOptions } = require('../config/cookies');
+const { supabase, isNoRowsError } = require('../config/supabase');
+
+function mapUserRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    _id: row.id,
+    username: row.username,
+    email: row.email,
+    role: row.role,
+    createdAt: row.created_at
+  };
+}
 
 // POST /api/auth/login
 exports.login = async (req, res) => {
@@ -13,18 +26,26 @@ exports.login = async (req, res) => {
     }
 
     const trimmedUsername = username.trim();
-    const user = await User.findOne({ username: trimmedUsername });
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id,username,password,role')
+      .eq('username', trimmedUsername)
+      .maybeSingle();
+
+    if (error && !isNoRowsError(error)) {
+      throw new Error(error.message || 'Error consultando usuario');
+    }
 
     if (!user) {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
-    const valid = await user.comparePassword(password);
+    const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
-    const payload = { userId: user._id, username: user.username, role: user.role };
+    const payload = { userId: user.id, username: user.username, role: user.role };
     const maxAge = remember ? 7 * 24 * 60 * 60 : 24 * 60 * 60;
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: maxAge });
 
@@ -32,7 +53,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       message: 'Sesion iniciada',
-      user: { id: user._id, username: user.username, role: user.role }
+      user: { id: user.id, username: user.username, role: user.role }
     });
   } catch (err) {
     res.status(500).json({ message: 'Error al iniciar sesion', error: err.message });
@@ -67,40 +88,45 @@ exports.createSeller = async (req, res) => {
     }
 
     const trimmedUsername = username.trim();
-    const existing = await User.findOne({ username: trimmedUsername });
+    const { data: existing, error: existingError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('username', trimmedUsername)
+      .maybeSingle();
+
+    if (existingError && !isNoRowsError(existingError)) {
+      throw new Error(existingError.message || 'Error consultando usuario');
+    }
+
     if (existing) {
       return res.status(409).json({ message: 'Ya existe un usuario con ese nombre' });
     }
 
-    const seller = new User({
-      username: trimmedUsername,
-      password,
-      email: email || undefined,
-      role: 'seller'
-    });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const { data: seller, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        username: trimmedUsername,
+        password: hashedPassword,
+        email: email || null,
+        role: 'seller'
+      })
+      .select('id,username,email,role,created_at')
+      .single();
 
-    await seller.save();
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return res.status(409).json({ message: 'Ya existe un usuario con ese nombre' });
+      }
+      throw new Error(insertError.message || 'Error insertando vendedor');
+    }
 
     res.status(201).json({
       success: true,
       message: 'Vendedor creado correctamente',
-      user: {
-        id: seller._id,
-        username: seller.username,
-        email: seller.email || null,
-        role: seller.role,
-        createdAt: seller.createdAt
-      }
+      user: mapUserRow(seller)
     });
   } catch (err) {
-    if (err && err.name === 'ValidationError') {
-      const firstError = Object.values(err.errors || {})[0];
-      const detail = firstError?.message || err.message || 'Datos invalidos';
-      return res.status(400).json({ message: detail });
-    }
-    if (err && err.code === 11000) {
-      return res.status(409).json({ message: 'Ya existe un usuario con ese nombre' });
-    }
     res.status(500).json({ message: err?.message || 'Error al crear vendedor' });
   }
 };
@@ -108,10 +134,17 @@ exports.createSeller = async (req, res) => {
 // GET /api/auth/users/sellers
 exports.listSellers = async (_req, res) => {
   try {
-    const sellers = await User.find({ role: 'seller' })
-      .select('_id username email role createdAt')
-      .sort({ createdAt: -1 })
-      .lean();
+    const { data, error } = await supabase
+      .from('users')
+      .select('id,username,email,role,created_at')
+      .eq('role', 'seller')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message || 'Error consultando vendedores');
+    }
+
+    const sellers = (data || []).map(mapUserRow);
 
     res.json({ success: true, sellers });
   } catch (err) {

@@ -3,7 +3,7 @@
  */
 require('dotenv').config();
 
-const required = ['JWT_SECRET'];
+const required = ['JWT_SECRET', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
 
 const missing = required.filter((key) => !process.env[key] || process.env[key].trim() === '');
 
@@ -15,6 +15,8 @@ if (missing.length > 0) {
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /**
  * CORS origins. Accepts:
@@ -38,6 +40,8 @@ const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || '';
 
 module.exports = {
   JWT_SECRET,
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
   CORS_ORIGIN,
   NODE_ENV,
   COOKIE_SECURE,

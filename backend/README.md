@@ -1,23 +1,36 @@
 # Rifatela Backend
 
-API Node.js/Express para rifas y autenticacion.
+API Node.js/Express para rifas y autenticacion usando Supabase (Postgres).
 
 ## Desarrollo local
 
-1. Copia `backend/.env.example` a `backend/.env`.
-2. Configura al menos `JWT_SECRET` y `MONGO_URI`.
-3. Instala dependencias:
+1. Crea el schema en Supabase:
+   - Ejecuta `backend/scripts/supabase-schema.sql` en SQL Editor.
+2. Copia `backend/.env.example` a `backend/.env`.
+3. Configura al menos:
+   - `JWT_SECRET`
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. Instala dependencias:
    ```bash
    cd backend
    npm install
    ```
-4. Ejecuta en desarrollo:
+5. Ejecuta en desarrollo:
    ```bash
    npm run dev
    ```
 
-API local: `http://localhost:5000/api`
+API local: `http://localhost:5000/api`  
 Healthcheck: `GET /api/health`
+
+## Script de administrador
+
+Para crear un admin inicial:
+```bash
+cd backend
+npm run create-admin
+```
 
 ## Despliegue en Railway
 
@@ -25,10 +38,12 @@ Healthcheck: `GET /api/health`
 2. Variables de entorno minimas:
    - `NODE_ENV=production`
    - `JWT_SECRET=<valor largo y aleatorio>`
-   - `MONGO_URI=<mongodb connection string>`
+   - `SUPABASE_URL=https://<project-ref>.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY=<service-role-key>`
    - `CORS_ORIGIN=https://tu-frontend.vercel.app`
-3. Railway detecta `npm start` automaticamente.
-4. Verifica en produccion:
+3. En produccion usa `SERVE_FRONTEND=false` (o vacio) si el frontend vive en otro servicio.
+4. Railway detecta `npm start` automaticamente.
+5. Verifica en produccion:
    - `GET https://<tu-backend>.up.railway.app/api/health`
 
 ## Cookie/Auth recomendada para frontend separado
